@@ -6,39 +6,39 @@
 <div class="container text-center mt-5">
     <h3 class="mb-4 fw-bold">안드로이드 앱 개인정보 처리방침 신뢰도 검사</h3>
 
-    <div class="row justify-content-center align-items-start">
-        <!-- 왼쪽: APK 업로드 -->
-        <div class="col-md-4 d-flex flex-column align-items-center mb-3">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="file" name="apk_file" id="apk_file" hidden onchange="this.form.submit()">
-                <label for="apk_file" class="btn btn-light btn-lg px-5 py-4 shadow-sm">
-                    APK파일 업로드
-                </label>
-            </form>
+<div class="row justify-content-center align-items-start">
+    <!-- 왼쪽: APK 업로드 -->
+    <div class="col-md-4 d-flex flex-column align-items-center mb-3">
+        <form method="post" enctype="multipart/form-data" class="mt-3"><!-- 👈 살짝 내려오기 -->
+            {% csrf_token %}
+            <input type="file" name="apk_file" id="apk_file" hidden onchange="this.form.submit()">
+            <label for="apk_file" class="btn btn-primary btn-lg px-5 py-4 shadow-sm">
+                APK파일 업로드
+            </label>
+        </form>
 
-            <!-- ✅ 업로드된 파일명 표시 -->
-            {% if uploaded_file %}
-                <p class="mt-3 text-success fw-bold">업로드된 파일: {{ uploaded_file }}</p>
-            {% endif %}
-        </div>
+        {% if uploaded_file %}
+            <p class="mt-3 text-success fw-bold">업로드된 파일: {{ uploaded_file }}</p>
+        {% endif %}
+    </div>
 
-        <!-- 오른쪽: 개인정보 처리방침 입력 -->
-        <div class="col-md-6 mb-3 text-start">
-            <form method="post" action="{% url 'success' %}">
-                {% csrf_token %}
-                <label for="policy" class="form-label fw-bold">개인정보 처리방침</label>
-                <textarea id="policy" name="policy_text" class="form-control" rows="10" placeholder="개인정보 처리방침을 붙여넣으세요"></textarea>
+    <!-- 오른쪽: 개인정보 처리방침 입력 -->
+    <div class="col-md-6 mb-3 text-start">
+        <form method="post" action="{% url 'success' %}">
+            {% csrf_token %}
+            <label for="policy" class="form-label fw-bold">개인정보 처리방침</label>
+            <textarea id="policy" name="policy_text" class="form-control" rows="10"
+                      placeholder="개인정보 처리방침을 붙여넣으세요"></textarea>
 
-                <div class="mt-4 text-center">
-                    <button type="submit" class="btn btn-light btn-lg px-5 py-3 shadow-sm">분석 시작</button>
-                </div>
-            </form>
-        </div>
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 shadow-sm">
+                    분석 시작
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- ✅ 업로드 성공 팝업 -->
 {% if uploaded_file %}
 <script>
     alert("파일 업로드를 성공했습니다! ({{ uploaded_file }})");
