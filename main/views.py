@@ -4,18 +4,23 @@ import os
 
 def home(request):
     uploaded_file = None
+    policy_text = None
 
-    # 파일 업로드만 처리
-    if request.method == "POST" and "apk_file" in request.FILES:
-        apk_file = request.FILES["apk_file"]
+    if request.method == "POST":
+        policy_text = request.POST.get("policy_text")
 
-        # 파일 저장
-        save_path = os.path.join(settings.MEDIA_ROOT, apk_file.name)
-        with open(save_path, "wb+") as destination:
-            for chunk in apk_file.chunks():
-                destination.write(chunk)
+        if "apk_file" in request.FILES:
+            apk_file = request.FILES["apk_file"]
+            save_path = os.path.join(settings.MEDIA_ROOT, apk_file.name)
+            with open(save_path, "wb+") as destination:
+                for chunk in apk_file.chunks():
+                    destination.write(chunk)
+            uploaded_file = apk_file.name
 
-        uploaded_file = apk_file.name
+        return render(request, "success.html", {
+            "uploaded_file": uploaded_file,
+            "policy_text": policy_text,
+        })
 
     return render(request, "home.html", {"uploaded_file": uploaded_file})
 
