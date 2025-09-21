@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}분석 결과{% endblock %}
+{% block title %}Result{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <h3 class="fw-bold">분석 결과</h3>
 
     {% if uploaded_file %}
-        <p>📦 업로드된 APK: <strong>{{ uploaded_file }}</strong></p>
+        <p>📦 업로드된 APK파일: <strong>{{ uploaded_file }}</strong></p>
     {% endif %}
 
     {% if policy_text %}

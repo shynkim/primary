@@ -1,13 +1,11 @@
+from django.shortcuts import render, redirect
 from django.conf import settings
-from django.shortcuts import render
 import os
 
 def home(request):
-    uploaded_file = None
-    policy_text = None
-
     if request.method == "POST":
-        policy_text = request.POST.get("policy_text")
+        # 입력값 저장
+        request.session["policy_text"] = request.POST.get("policy_text")
 
         if "apk_file" in request.FILES:
             apk_file = request.FILES["apk_file"]
@@ -15,18 +13,19 @@ def home(request):
             with open(save_path, "wb+") as destination:
                 for chunk in apk_file.chunks():
                     destination.write(chunk)
-            uploaded_file = apk_file.name
+            request.session["uploaded_file"] = apk_file.name
 
-        return render(request, "success.html", {
-            "uploaded_file": uploaded_file,
-            "policy_text": policy_text,
-        })
+        # ✅ redirect로 /result URL로 이동
+        return redirect("result")
 
-    return render(request, "home.html", {"uploaded_file": uploaded_file})
+    return render(request, "home.html")
 
 
-def success(request):
-    if request.method == "POST":
-        policy_text = request.POST.get("policy_text")
-        return render(request, "success.html", {"policy_text": policy_text})
-    return render(request, "success.html")
+def result(request):
+    uploaded_file = request.session.get("uploaded_file")
+    policy_text = request.session.get("policy_text")
+
+    return render(request, "result.html", {
+        "uploaded_file": uploaded_file,
+        "policy_text": policy_text,
+    })
