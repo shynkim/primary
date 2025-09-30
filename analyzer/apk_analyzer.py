@@ -1,0 +1,299 @@
+"""
+APK 파일 분석을 위한 Androguard 기반 분석기
+"""
+import os
+import tempfile
+import zipfile
+import json
+from datetime import datetime
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis import analysis
+from androguard.misc import AnalyzeAPK
+
+
+class APKAnalyzer:
+    """APK 파일을 분석하는 클래스"""
+    
+    def __init__(self, apk_path):
+        self.apk_path = apk_path
+        self.apk_obj = None
+        self.dalvik_vm = None
+        self.analysis = None
+    
+    def _make_json_serializable(self, obj):
+        """객체를 JSON 직렬화 가능한 형태로 변환"""
+        if obj is None:
+            return None
+        elif isinstance(obj, (str, int, float, bool)):
+            return obj
+        elif isinstance(obj, (list, tuple)):
+            return [self._make_json_serializable(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {str(key): self._make_json_serializable(value) for key, value in obj.items()}
+        else:
+            # MUTF8String 및 기타 Androguard 객체들을 문자열로 변환
+            return str(obj)
+        
+    def analyze(self):
+        """APK 파일을 분석하고 결과를 반환"""
+        try:
+            # APK 파일 분석
+            self.apk_obj, self.dalvik_vm, self.analysis = AnalyzeAPK(self.apk_path)
+            
+            # 기본 정보 추출
+            basic_info = self._extract_basic_info()
+            
+            # 권한 정보 추출
+            permissions = self._extract_permissions()
+            
+            # 컴포넌트 정보 추출
+            activities = self._extract_activities()
+            services = self._extract_services()
+            receivers = self._extract_receivers()
+            
+            # API 호출 정보 추출
+            api_calls = self._extract_api_calls()
+            
+            # 보안 분석
+            security_analysis = self._analyze_security()
+            
+            result = {
+                'basic_info': basic_info,
+                'permissions': permissions,
+                'activities': activities,
+                'services': services,
+                'receivers': receivers,
+                'api_calls': api_calls,
+                'security_analysis': security_analysis,
+                'status': 'completed'
+            }
+            
+            # 모든 결과를 JSON 직렬화 가능한 형태로 변환
+            return self._make_json_serializable(result)
+            
+        except Exception as e:
+            return {
+                'status': 'failed',
+                'error': str(e)
+            }
+    
+    def _extract_basic_info(self):
+        """APK의 기본 정보를 추출"""
+        try:
+            basic_info = {
+                'package_name': self.apk_obj.get_package(),
+                'version_name': self.apk_obj.get_androidversion_name(),
+                'version_code': str(self.apk_obj.get_androidversion_code()),
+                'min_sdk': str(self.apk_obj.get_min_sdk_version()),
+                'target_sdk': str(self.apk_obj.get_target_sdk_version()),
+                'app_name': self.apk_obj.get_app_name(),
+                'main_activity': self.apk_obj.get_main_activity(),
+            }
+            return self._make_json_serializable(basic_info)
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def _extract_permissions(self):
+        """권한 정보를 추출"""
+        try:
+            permissions = self.apk_obj.get_permissions()
+            permission_list = list(permissions) if permissions else []
+            return self._make_json_serializable(permission_list)
+        except Exception as e:
+            return []
+    
+    def _extract_activities(self):
+        """액티비티 정보를 추출"""
+        try:
+            activities = self.apk_obj.get_activities()
+            activity_list = []
+            
+            for activity in activities:
+                activity_info = {
+                    'name': activity,
+                    'exported': self.apk_obj.get_activity(activity).get('exported', False),
+                    'intent_filters': []
+                }
+                
+                # Intent filters 추출
+                intent_filters = self.apk_obj.get_intent_filters('activity', activity)
+                if intent_filters:
+                    for intent_filter in intent_filters:
+                        filter_info = {
+                            'actions': intent_filter.get('action', []),
+                            'categories': intent_filter.get('category', []),
+                            'data': intent_filter.get('data', [])
+                        }
+                        activity_info['intent_filters'].append(filter_info)
+                
+                activity_list.append(activity_info)
+            
+            return self._make_json_serializable(activity_list)
+        except Exception as e:
+            return []
+    
+    def _extract_services(self):
+        """서비스 정보를 추출"""
+        try:
+            services = self.apk_obj.get_services()
+            service_list = []
+            
+            for service in services:
+                service_info = {
+                    'name': service,
+                    'exported': self.apk_obj.get_service(service).get('exported', False),
+                    'intent_filters': []
+                }
+                
+                # Intent filters 추출
+                intent_filters = self.apk_obj.get_intent_filters('service', service)
+                if intent_filters:
+                    for intent_filter in intent_filters:
+                        filter_info = {
+                            'actions': intent_filter.get('action', []),
+                            'categories': intent_filter.get('category', []),
+                            'data': intent_filter.get('data', [])
+                        }
+                        service_info['intent_filters'].append(filter_info)
+                
+                service_list.append(service_info)
+            
+            return self._make_json_serializable(service_list)
+        except Exception as e:
+            return []
+    
+    def _extract_receivers(self):
+        """리시버 정보를 추출"""
+        try:
+            receivers = self.apk_obj.get_receivers()
+            receiver_list = []
+            
+            for receiver in receivers:
+                receiver_info = {
+                    'name': receiver,
+                    'exported': self.apk_obj.get_receiver(receiver).get('exported', False),
+                    'intent_filters': []
+                }
+                
+                # Intent filters 추출
+                intent_filters = self.apk_obj.get_intent_filters('receiver', receiver)
+                if intent_filters:
+                    for intent_filter in intent_filters:
+                        filter_info = {
+                            'actions': intent_filter.get('action', []),
+                            'categories': intent_filter.get('category', []),
+                            'data': intent_filter.get('data', [])
+                        }
+                        receiver_info['intent_filters'].append(filter_info)
+                
+                receiver_list.append(receiver_info)
+            
+            return self._make_json_serializable(receiver_list)
+        except Exception as e:
+            return []
+    
+    def _extract_api_calls(self):
+        """API 호출 정보를 추출"""
+        try:
+            api_calls = []
+            
+            if self.analysis:
+                # 위험한 API 호출 패턴 검사
+                dangerous_apis = [
+                    'Ljava/lang/Runtime;->exec',
+                    'Landroid/telephony/SmsManager;->sendTextMessage',
+                    'Landroid/location/LocationManager;->requestLocationUpdates',
+                    'Landroid/content/Context;->sendBroadcast',
+                    'Ljava/net/URL;->openConnection',
+                    'Ljavax/crypto/Cipher;->getInstance',
+                ]
+                
+                for method in self.analysis.get_methods():
+                    method_name = method.get_method().get_name()
+                    class_name = method.get_method().get_class_name()
+                    full_name = f"{class_name}->{method_name}"
+                    
+                    for dangerous_api in dangerous_apis:
+                        if dangerous_api in full_name:
+                            api_calls.append({
+                                'api': full_name,
+                                'class': class_name,
+                                'method': method_name,
+                                'risk_level': 'high' if 'exec' in full_name or 'sendTextMessage' in full_name else 'medium'
+                            })
+                            break
+            
+            return self._make_json_serializable(api_calls)
+        except Exception as e:
+            return []
+    
+    def _analyze_security(self):
+        """보안 분석 수행"""
+        try:
+            security_issues = []
+            
+            # 위험한 권한 검사
+            dangerous_permissions = [
+                'android.permission.SEND_SMS',
+                'android.permission.READ_SMS',
+                'android.permission.RECORD_AUDIO',
+                'android.permission.CAMERA',
+                'android.permission.ACCESS_FINE_LOCATION',
+                'android.permission.ACCESS_COARSE_LOCATION',
+                'android.permission.READ_CONTACTS',
+                'android.permission.WRITE_CONTACTS',
+                'android.permission.READ_CALL_LOG',
+                'android.permission.WRITE_CALL_LOG',
+            ]
+            
+            app_permissions = self.apk_obj.get_permissions()
+            for permission in dangerous_permissions:
+                if permission in app_permissions:
+                    security_issues.append({
+                        'type': 'dangerous_permission',
+                        'permission': permission,
+                        'severity': 'high',
+                        'description': f'위험한 권한 사용: {permission}'
+                    })
+            
+            # 디버그 가능 여부 검사
+            if self.apk_obj.is_debuggable():
+                security_issues.append({
+                    'type': 'debuggable',
+                    'severity': 'medium',
+                    'description': '앱이 디버그 가능하도록 설정됨'
+                })
+            
+            # 백업 허용 여부 검사
+            if self.apk_obj.is_allow_backup():
+                security_issues.append({
+                    'type': 'allow_backup',
+                    'severity': 'medium',
+                    'description': '앱 데이터 백업이 허용됨'
+                })
+            
+            # 네트워크 보안 정책 검사
+            if not self.apk_obj.is_network_security_config():
+                security_issues.append({
+                    'type': 'network_security',
+                    'severity': 'low',
+                    'description': '네트워크 보안 정책이 설정되지 않음'
+                })
+            
+            security_result = {
+                'issues': security_issues,
+                'total_issues': len(security_issues),
+                'high_severity': len([i for i in security_issues if i.get('severity') == 'high']),
+                'medium_severity': len([i for i in security_issues if i.get('severity') == 'medium']),
+                'low_severity': len([i for i in security_issues if i.get('severity') == 'low']),
+            }
+            return self._make_json_serializable(security_result)
+            
+        except Exception as e:
+            error_result = {
+                'error': str(e),
+                'issues': [],
+                'total_issues': 0
+            }
+            return self._make_json_serializable(error_result)
+

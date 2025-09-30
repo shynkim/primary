@@ -1,0 +1,118 @@
+{% extends 'analyzer/base.html' %}
+
+{% block title %}분석 목록 - APK 분석기{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-list me-2"></i>분석 목록</h2>
+    <a href="{% url 'analyzer:index' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>새 분석
+    </a>
+</div>
+
+{% if analyses %}
+    <div class="row">
+        {% for analysis in analyses %}
+        <div class="col-lg-6 mb-4">
+            <div class="card analysis-card {% if analysis.status == 'completed' and analysis.security_analysis.total_issues > 0 %}{% if analysis.security_analysis.high_severity > 0 %}security-high{% elif analysis.security_analysis.medium_severity > 0 %}security-medium{% else %}security-low{% endif %}{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-mobile-alt me-2"></i>{{ analysis.file_name }}
+                    </h6>
+                    <span class="badge 
+                        {% if analysis.status == 'completed' %}bg-success
+                        {% elif analysis.status == 'analyzing' %}bg-warning
+                        {% elif analysis.status == 'failed' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ analysis.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if analysis.status == 'completed' %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <small class="text-muted">패키지명</small>
+                                <div class="fw-bold">{{ analysis.package_name|default:"-" }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">버전</small>
+                                <div class="fw-bold">{{ analysis.version_name|default:"-" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-4">
+                                <small class="text-muted">권한</small>
+                                <div class="fw-bold">{{ analysis.permissions|length }}개</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">액티비티</small>
+                                <div class="fw-bold">{{ analysis.get_activities_count }}개</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">서비스</small>
+                                <div class="fw-bold">{{ analysis.get_services_count }}개</div>
+                            </div>
+                        </div>
+                        
+                        {% if analysis.security_analysis.total_issues > 0 %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>보안 이슈 발견:</strong> {{ analysis.security_analysis.total_issues }}개
+                            {% if analysis.security_analysis.high_severity > 0 %}
+                                <span class="badge bg-danger ms-2">높음: {{ analysis.security_analysis.high_severity }}</span>
+                            {% endif %}
+                            {% if analysis.security_analysis.medium_severity > 0 %}
+                                <span class="badge bg-warning ms-2">중간: {{ analysis.security_analysis.medium_severity }}</span>
+                            {% endif %}
+                            {% if analysis.security_analysis.low_severity > 0 %}
+                                <span class="badge bg-info ms-2">낮음: {{ analysis.security_analysis.low_severity }}</span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>보안 이슈 없음</strong>
+                        </div>
+                        {% endif %}
+                        
+                    {% elif analysis.status == 'failed' %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>분석 실패:</strong> {{ analysis.error_message }}
+                        </div>
+                    {% elif analysis.status == 'analyzing' %}
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">분석 중...</span>
+                            </div>
+                            <p class="mt-2">APK 파일을 분석하고 있습니다...</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ analysis.upload_time|date:"Y-m-d H:i" }}
+                        </small>
+                        <a href="{% url 'analyzer:analysis_detail' analysis.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>상세보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">분석된 APK가 없습니다</h4>
+        <p class="text-muted">첫 번째 APK 파일을 업로드하여 분석을 시작해보세요.</p>
+        <a href="{% url 'analyzer:index' %}" class="btn btn-primary">
+            <i class="fas fa-upload me-2"></i>APK 업로드
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
