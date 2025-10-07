@@ -5,6 +5,8 @@ import os
 import tempfile
 import zipfile
 import json
+import csv
+import pandas as pd
 from datetime import datetime
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
@@ -19,6 +21,7 @@ class APKAnalyzer:
         self.apk_obj = None
         self.dalvik_vm = None
         self.analysis = None
+        self.csv_output_dir = None
     
     def _make_json_serializable(self, obj):
         """객체를 JSON 직렬화 가능한 형태로 변환"""
@@ -296,4 +299,116 @@ class APKAnalyzer:
                 'total_issues': 0
             }
             return self._make_json_serializable(error_result)
+    
+    def _save_permissions_to_csv(self, permissions, output_dir):
+        """권한 목록을 CSV 파일로 저장"""
+        try:
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            
+            csv_path = os.path.join(output_dir, 'permissions.csv')
+            
+            with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Permission'])  # 헤더
+                
+                for permission in permissions:
+                    writer.writerow([permission])
+            
+            return csv_path
+        except Exception as e:
+            print(f"권한 CSV 저장 중 오류 발생: {e}")
+            return None
+    
+    def _save_analysis_to_csv(self, analysis_data, output_dir):
+        """전체 분석 결과를 여러 CSV 파일로 저장"""
+        try:
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            
+            saved_files = []
+            
+            # 1. 기본 정보 CSV
+            if 'basic_info' in analysis_data:
+                basic_info_path = os.path.join(output_dir, 'basic_info.csv')
+                basic_df = pd.DataFrame([analysis_data['basic_info']])
+                basic_df.to_csv(basic_info_path, index=False, encoding='utf-8')
+                saved_files.append(basic_info_path)
+            
+            # 2. 권한 목록 CSV
+            if 'permissions' in analysis_data:
+                permissions_path = self._save_permissions_to_csv(analysis_data['permissions'], output_dir)
+                if permissions_path:
+                    saved_files.append(permissions_path)
+            
+            # 3. 액티비티 정보 CSV
+            if 'activities' in analysis_data and analysis_data['activities']:
+                activities_path = os.path.join(output_dir, 'activities.csv')
+                activities_df = pd.DataFrame(analysis_data['activities'])
+                activities_df.to_csv(activities_path, index=False, encoding='utf-8')
+                saved_files.append(activities_path)
+            
+            # 4. 서비스 정보 CSV
+            if 'services' in analysis_data and analysis_data['services']:
+                services_path = os.path.join(output_dir, 'services.csv')
+                services_df = pd.DataFrame(analysis_data['services'])
+                services_df.to_csv(services_path, index=False, encoding='utf-8')
+                saved_files.append(services_path)
+            
+            # 5. 리시버 정보 CSV
+            if 'receivers' in analysis_data and analysis_data['receivers']:
+                receivers_path = os.path.join(output_dir, 'receivers.csv')
+                receivers_df = pd.DataFrame(analysis_data['receivers'])
+                receivers_df.to_csv(receivers_path, index=False, encoding='utf-8')
+                saved_files.append(receivers_path)
+            
+            # 6. API 호출 정보 CSV
+            if 'api_calls' in analysis_data and analysis_data['api_calls']:
+                api_calls_path = os.path.join(output_dir, 'api_calls.csv')
+                api_calls_df = pd.DataFrame(analysis_data['api_calls'])
+                api_calls_df.to_csv(api_calls_path, index=False, encoding='utf-8')
+                saved_files.append(api_calls_path)
+            
+            # 7. 보안 분석 결과 CSV
+            if 'security_analysis' in analysis_data and 'issues' in analysis_data['security_analysis']:
+                security_path = os.path.join(output_dir, 'security_analysis.csv')
+                security_df = pd.DataFrame(analysis_data['security_analysis']['issues'])
+                security_df.to_csv(security_path, index=False, encoding='utf-8')
+                saved_files.append(security_path)
+            
+            return saved_files
+            
+        except Exception as e:
+            print(f"CSV 저장 중 오류 발생: {e}")
+            return []
+    
+    def analyze_with_csv_export(self, csv_output_dir=None):
+        """APK 분석 후 결과를 JSON과 CSV 형태로 모두 저장"""
+        try:
+            # 기본 분석 수행
+            analysis_result = self.analyze()
+            
+            if analysis_result.get('status') == 'failed':
+                return analysis_result
+            
+            # CSV 출력 디렉토리 설정
+            if csv_output_dir is None:
+                csv_output_dir = os.path.join(os.path.dirname(self.apk_path), 'analysis_csv')
+            
+            self.csv_output_dir = csv_output_dir
+            
+            # CSV 파일들 저장
+            saved_csv_files = self._save_analysis_to_csv(analysis_result, csv_output_dir)
+            
+            # 결과에 CSV 파일 경로 정보 추가
+            analysis_result['csv_files'] = saved_csv_files
+            analysis_result['csv_output_dir'] = csv_output_dir
+            
+            return analysis_result
+            
+        except Exception as e:
+            return {
+                'status': 'failed',
+                'error': str(e)
+            }
 

@@ -50,9 +50,11 @@ def upload_apk(request):
             analysis_obj.status = 'analyzing'
             analysis_obj.save()
             
-            # APK 분석 수행
+            # APK 분석 수행 (CSV 내보내기 포함)
             analyzer = APKAnalyzer(full_path)
-            result = analyzer.analyze()
+            # CSV 파일을 media/analysis_csv/ 디렉토리에 저장
+            csv_output_dir = os.path.join(default_storage.location, 'analysis_csv', str(analysis_obj.id))
+            result = analyzer.analyze_with_csv_export(csv_output_dir)
             
             if result['status'] == 'completed':
                 # 분석 결과 저장
@@ -69,6 +71,12 @@ def upload_apk(request):
                 analysis_obj.receivers = result['receivers']
                 analysis_obj.api_calls = result['api_calls']
                 analysis_obj.security_analysis = result['security_analysis']
+                
+                # CSV 파일 정보 저장 (파일명만 추출)
+                csv_files = result.get('csv_files', [])
+                csv_filenames = [os.path.basename(f) for f in csv_files]
+                analysis_obj.csv_files = csv_filenames
+                analysis_obj.csv_output_dir = result.get('csv_output_dir', '')
                 
                 analysis_obj.status = 'completed'
                 analysis_obj.analysis_time = timezone.now()

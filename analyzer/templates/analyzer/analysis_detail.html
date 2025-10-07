@@ -71,6 +71,37 @@
         </div>
     </div>
 
+    <!-- CSV 다운로드 -->
+    {% if analysis.csv_files %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-download me-2"></i>CSV 파일 다운로드
+                <span class="badge bg-success ms-2">{{ analysis.csv_files|length }}개 파일</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">분석 결과를 CSV 형태로 다운로드할 수 있습니다.</p>
+            <div class="row">
+                {% for csv_file in analysis.csv_files %}
+                <div class="col-md-6 mb-2">
+                    <a href="/media/analysis_csv/{{ analysis.id }}/{{ csv_file }}" 
+                       class="btn btn-outline-primary btn-sm w-100" download>
+                        <i class="fas fa-file-csv me-2"></i>{{ csv_file }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    모든 CSV 파일이 저장된 디렉토리: <code>{{ analysis.csv_output_dir }}</code>
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- 보안 분석 결과 -->
     <div class="card mb-4">
         <div class="card-header">

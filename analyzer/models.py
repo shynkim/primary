@@ -43,6 +43,10 @@ class APKAnalysis(models.Model):
     # 보안 분석 결과
     security_analysis = models.JSONField(default=dict, verbose_name="보안 분석 결과")
     
+    # CSV 파일 정보
+    csv_files = models.JSONField(default=list, verbose_name="CSV 파일 목록")
+    csv_output_dir = models.CharField(max_length=500, blank=True, verbose_name="CSV 출력 디렉토리")
+    
     # 오류 메시지
     error_message = models.TextField(blank=True, verbose_name="오류 메시지")
     
