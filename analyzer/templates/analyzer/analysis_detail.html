@@ -1,330 +1,233 @@
 {% extends 'analyzer/base.html' %}
-
-{% block title %}{{ analysis.file_name }} - 분석 결과{% endblock %}
+{% block title %}{{ analysis.file_name }} - 비교 분석 결과{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-mobile-alt me-2"></i>{{ analysis.file_name }}</h2>
-    <div>
-        <a href="{% url 'analyzer:analysis_list' %}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i>목록으로
-        </a>
-        <span class="badge 
-            {% if analysis.status == 'completed' %}bg-success
-            {% elif analysis.status == 'analyzing' %}bg-warning
-            {% elif analysis.status == 'failed' %}bg-danger
-            {% else %}bg-secondary{% endif %} fs-6">
-            {{ analysis.get_status_display }}
-        </span>
-    </div>
-</div>
+<div class="container-xxl py-4">
 
-{% if analysis.status == 'completed' %}
-    <!-- 기본 정보 -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>기본 정보</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <table class="table table-borderless">
-                        <tr>
-                            <td class="fw-bold">파일명:</td>
-                            <td>{{ analysis.file_name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">파일 크기:</td>
-                            <td>{{ analysis.file_size|filesizeformat }}</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">패키지명:</td>
-                            <td><code>{{ analysis.package_name|default:"-" }}</code></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">버전명:</td>
-                            <td>{{ analysis.version_name|default:"-" }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-borderless">
-                        <tr>
-                            <td class="fw-bold">버전 코드:</td>
-                            <td>{{ analysis.version_code|default:"-" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">최소 SDK:</td>
-                            <td>{{ analysis.min_sdk|default:"-" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">타겟 SDK:</td>
-                            <td>{{ analysis.target_sdk|default:"-" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">분석 시간:</td>
-                            <td>{{ analysis.analysis_time|date:"Y-m-d H:i:s" }}</td>
-                        </tr>
-                    </table>
-                </div>
+  <!-- SECTION 1: 분석 결과 -->
+  <div class="mb-5">
+    <h4 class="fw-bold mb-1">분석 결과</h4>
+    <p class="text-muted mb-4">APK 파일과 개인정보 처리방침에서 추출된 정보입니다</p>
+
+    <div class="row g-4">
+      <!-- APK 권한 -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3 gap-2">
+              <div class="avatar bg-success-subtle text-success"><i class="fa-solid fa-cube"></i></div>
+              <div>
+                <div class="fw-semibold">APK 파일 권한</div>
+                <div class="text-muted small">{{ analysis.apk_permissions|length }}개 권한 감지됨</div>
+              </div>
             </div>
-        </div>
-    </div>
-
-    <!-- CSV 다운로드 -->
-    {% if analysis.csv_files %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-download me-2"></i>CSV 파일 다운로드
-                <span class="badge bg-success ms-2">{{ analysis.csv_files|length }}개 파일</span>
-            </h5>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-3">분석 결과를 CSV 형태로 다운로드할 수 있습니다.</p>
-            <div class="row">
-                {% for csv_file in analysis.csv_files %}
-                <div class="col-md-6 mb-2">
-                    <a href="/media/analysis_csv/{{ analysis.id }}/{{ csv_file }}" 
-                       class="btn btn-outline-primary btn-sm w-100" download>
-                        <i class="fas fa-file-csv me-2"></i>{{ csv_file }}
-                    </a>
+            {% for perm in analysis.apk_permissions %}
+              <div class="p-3 mb-2 border rounded-3 bg-light-subtle d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">{{ perm.name }}</div>
+                  <div class="text-muted small">{{ perm.description }}</div>
                 </div>
-                {% endfor %}
-            </div>
-            <div class="mt-3">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    모든 CSV 파일이 저장된 디렉토리: <code>{{ analysis.csv_output_dir }}</code>
-                </small>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- 보안 분석 결과 -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-shield-alt me-2"></i>보안 분석 결과
-                {% if analysis.security_analysis.total_issues > 0 %}
-                    <span class="badge bg-danger ms-2">{{ analysis.security_analysis.total_issues }}개 이슈</span>
-                {% else %}
-                    <span class="badge bg-success ms-2">이슈 없음</span>
-                {% endif %}
-            </h5>
-        </div>
-        <div class="card-body">
-            {% if analysis.security_analysis.total_issues > 0 %}
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <div class="h3 text-danger">{{ analysis.security_analysis.high_severity }}</div>
-                            <small class="text-muted">높은 위험도</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <div class="h3 text-warning">{{ analysis.security_analysis.medium_severity }}</div>
-                            <small class="text-muted">중간 위험도</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <div class="h3 text-info">{{ analysis.security_analysis.low_severity }}</div>
-                            <small class="text-muted">낮은 위험도</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <h6>발견된 보안 이슈:</h6>
-                {% for issue in analysis.security_analysis.issues %}
-                <div class="alert 
-                    {% if issue.severity == 'high' %}alert-danger
-                    {% elif issue.severity == 'medium' %}alert-warning
-                    {% else %}alert-info{% endif %}">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>{{ issue.description }}</strong>
-                    {% if issue.permission %}
-                        <br><small>권한: <code>{{ issue.permission }}</code></small>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>보안 이슈가 발견되지 않았습니다.</strong>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- 권한 목록 -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-key me-2"></i>권한 목록
-                <span class="badge bg-primary ms-2">{{ analysis.permissions|length }}개</span>
-            </h5>
-        </div>
-        <div class="card-body">
-            {% if analysis.permissions %}
-                <div class="component-list">
-                    {% for permission in analysis.permissions %}
-                        <span class="permission-item 
-                            {% if 'DANGEROUS' in permission or 'SEND_SMS' in permission or 'RECORD_AUDIO' in permission or 'CAMERA' in permission or 'LOCATION' in permission or 'CONTACTS' in permission or 'CALL_LOG' in permission %}permission-dangerous{% endif %}">
-                            {{ permission }}
-                        </span>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted">권한이 없습니다.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- 컴포넌트 정보 -->
-    <div class="row">
-        <!-- 액티비티 -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-window-maximize me-2"></i>액티비티
-                        <span class="badge bg-primary ms-2">{{ analysis.get_activities_count }}개</span>
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if analysis.activities %}
-                        <div class="component-list">
-                            {% for activity in analysis.activities %}
-                            <div class="mb-2">
-                                <code class="small">{{ activity.name }}</code>
-                                {% if activity.exported %}
-                                    <span class="badge bg-warning ms-1">Exported</span>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">액티비티가 없습니다.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- 서비스 -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-cogs me-2"></i>서비스
-                        <span class="badge bg-primary ms-2">{{ analysis.get_services_count }}개</span>
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if analysis.services %}
-                        <div class="component-list">
-                            {% for service in analysis.services %}
-                            <div class="mb-2">
-                                <code class="small">{{ service.name }}</code>
-                                {% if service.exported %}
-                                    <span class="badge bg-warning ms-1">Exported</span>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">서비스가 없습니다.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- 리시버 -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-broadcast-tower me-2"></i>리시버
-                        <span class="badge bg-primary ms-2">{{ analysis.receivers|length }}개</span>
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if analysis.receivers %}
-                        <div class="component-list">
-                            {% for receiver in analysis.receivers %}
-                            <div class="mb-2">
-                                <code class="small">{{ receiver.name }}</code>
-                                {% if receiver.exported %}
-                                    <span class="badge bg-warning ms-1">Exported</span>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">리시버가 없습니다.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- API 호출 분석 -->
-    {% if analysis.api_calls %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-code me-2"></i>위험한 API 호출
-                <span class="badge bg-warning ms-2">{{ analysis.api_calls|length }}개</span>
-            </h5>
-        </div>
-        <div class="card-body">
-            {% for api_call in analysis.api_calls %}
-            <div class="api-call-item 
-                {% if api_call.risk_level == 'high' %}api-call-high
-                {% elif api_call.risk_level == 'medium' %}api-call-medium{% endif %}">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <code>{{ api_call.api }}</code>
-                        <br>
-                        <small class="text-muted">클래스: {{ api_call.class }}</small>
-                    </div>
-                    <span class="badge 
-                        {% if api_call.risk_level == 'high' %}bg-danger
-                        {% elif api_call.risk_level == 'medium' %}bg-warning
-                        {% else %}bg-info{% endif %}">
-                        {{ api_call.risk_level|title }}
-                    </span>
-                </div>
-            </div>
+                <span class="badge rounded-pill bg-primary-subtle text-primary">{{ perm.category }}</span>
+              </div>
+            {% empty %}
+              <p class="text-muted">감지된 권한이 없습니다.</p>
             {% endfor %}
+          </div>
         </div>
+      </div>
+
+      <!-- 처리방침 항목 -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3 gap-2">
+              <div class="avatar bg-purple-subtle text-purple"><i class="fa-solid fa-file-lines"></i></div>
+              <div>
+                <div class="fw-semibold">처리방침 수집 항목</div>
+                <div class="text-muted small">{{ analysis.policy_items|length }}개 항목 발견됨</div>
+              </div>
+            </div>
+            {% for item in analysis.policy_items %}
+              <div class="p-3 mb-2 border rounded-3 bg-light-subtle">
+                <div class="fw-semibold d-flex justify-content-between">
+                  {{ item.name }}
+                  <span class="badge rounded-pill bg-secondary-subtle text-secondary">{{ item.category }}</span>
+                </div>
+                <div class="small text-muted mt-1">{{ item.details }}</div>
+              </div>
+            {% empty %}
+              <p class="text-muted">발견된 항목이 없습니다.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: 비교 결과 -->
+  <div class="mb-5">
+    <h4 class="fw-bold mb-1">비교 결과</h4>
+    <p class="text-muted mb-4">앱 권한과 개인정보 처리방침의 일치도 분석</p>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>전체 일치도 <small class="text-muted">({{ analysis.comparison.matches }}개 일치 / {{ analysis.comparison.total }}개 항목 중)</small></div>
+          <h3 class="fw-bold text-warning mb-0">{{ analysis.comparison.rate }}%</h3>
+        </div>
+        <div class="progress bg-light" style="height:10px;">
+          <div class="progress-bar bg-warning" style="width: {{ analysis.comparison.rate }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="stat-box bg-success-subtle text-success">
+          <div class="h4 mb-0">{{ analysis.comparison.matches }}</div>
+          <small>일치</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-box bg-danger-subtle text-danger">
+          <div class="h4 mb-0">{{ analysis.comparison.missing_policy }}</div>
+          <small>처리방침 누락</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-box bg-warning-subtle text-warning">
+          <div class="h4 mb-0">{{ analysis.comparison.not_in_app }}</div>
+          <small>앱 권한 없음</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- 일치 항목 -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body">
+            <h6 class="text-success"><i class="fa-regular fa-circle-check me-2"></i>일치 항목 ({{ analysis.comparison.matches }})</h6>
+            {% for m in analysis.comparison.matched_list %}
+              <div class="match-item bg-success-subtle text-success p-2 rounded-3 mb-1 small">{{ m }}</div>
+            {% empty %}<p class="text-muted small">일치 항목 없음</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 처리방침 누락 -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body">
+            <h6 class="text-danger"><i class="fa-regular fa-circle-xmark me-2"></i>처리방침 누락 ({{ analysis.comparison.missing_policy }})</h6>
+            {% for m in analysis.comparison.missing_list %}
+              <div class="match-item bg-danger-subtle text-danger p-2 rounded-3 mb-1 small">{{ m }}</div>
+            {% empty %}<p class="text-muted small">없음</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 앱 권한 없음 -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body">
+            <h6 class="text-warning"><i class="fa-regular fa-circle-exclamation me-2"></i>앱 권한 없음 ({{ analysis.comparison.not_in_app }})</h6>
+            {% for m in analysis.comparison.not_in_app_list %}
+              <div class="match-item bg-warning-subtle text-warning p-2 rounded-3 mb-1 small">{{ m }}</div>
+            {% empty %}<p class="text-muted small">없음</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: 권고사항
+  <div>
+    <h4 class="fw-bold mb-1">권고사항</h4>
+    <p class="text-muted mb-4">개인정보보호법 준수를 위한 개선 방향</p>
+
+    {% if analysis.recommendations.urgent %}
+    <div class="alert alert-danger rounded-4 p-4 mb-4">
+      <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>긴급 조치 필요 <span class="badge bg-danger text-white ms-1">우선순위 높음</span></h6>
+      <p class="text-muted small mb-2">앱에서 수집하는 정보가 처리방침에 명시되지 않았습니다.</p>
+      <div class="mb-2"><strong>법적 위험:</strong> 개인정보보호법 제15조 위반 가능성 — 미고지 시 과태료 대상</div>
+      <div class="mt-3"><strong>조치 방법:</strong><br>{{ analysis.recommendations.urgent_action }}</div>
+      <div class="mt-3"><strong>권장 문구 예시:</strong>
+        <pre class="bg-white rounded-3 p-3 small">{{ analysis.recommendations.urgent_template }}</pre>
+      </div>
     </div>
     {% endif %}
 
-{% elif analysis.status == 'failed' %}
-    <div class="card">
-        <div class="card-body text-center">
-            <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-            <h4>분석 실패</h4>
-            <p class="text-muted">{{ analysis.error_message }}</p>
-            <a href="{% url 'analyzer:index' %}" class="btn btn-primary">
-                <i class="fas fa-upload me-2"></i>다시 업로드
-            </a>
-        </div>
+    {% if analysis.recommendations.review %}
+    <div class="alert alert-warning rounded-4 p-4 mb-4">
+      <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-circle-exclamation me-2"></i>검토 필요 <span class="badge bg-warning text-dark ms-1">주의</span></h6>
+      <div class="small mb-2">처리방침에 명시된 항목이 실제 앱에서 수집되지 않습니다.</div>
+      <div class="mt-2"><strong>조치 방법 (선택):</strong><br>{{ analysis.recommendations.review_action }}</div>
     </div>
+    {% endif %}
 
-{% elif analysis.status == 'analyzing' %}
-    <div class="card">
-        <div class="card-body text-center">
-            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">분석 중...</span>
-            </div>
-            <h4>분석 중입니다</h4>
-            <p class="text-muted">APK 파일을 분석하고 있습니다. 잠시만 기다려주세요...</p>
-        </div>
+    {% if analysis.recommendations.best %}
+    <div class="alert alert-primary rounded-4 p-4">
+      <h6 class="fw-bold text-primary mb-3"><i class="fa-regular fa-circle-check me-2"></i>모범 사례</h6>
+      <ul class="small mb-0">
+        {% for tip in analysis.recommendations.best %}
+          <li>{{ tip }}</li>
+        {% endfor %}
+      </ul>
     </div>
-{% endif %}
+    {% endif %} -->
+  </div>
+
+  <div class="text-center mt-5">
+    <a href="{% url 'analyzer:index' %}" class="btn btn-outline-secondary btn-lg px-4">새로운 분석 시작하기</a>
+  </div>
+</div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+  /* 안전한 CSS 문법으로 수정 */
+  body {
+    background:
+      radial-gradient(900px 500px at 12% 2%, #e9eeff 0%, transparent 60%),
+      radial-gradient(900px 500px at 88% 2%, #e9ffee 0%, transparent 60%),
+      #f8faff;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+  }
+
+  .bg-purple-subtle { background: #f3e8ff !important; }
+  .text-purple { color: #7c3aed !important; }
+
+  .bg-success-subtle { background: #eaf8ef !important; }
+  .bg-danger-subtle  { background: #fdecec !important; }
+  .bg-warning-subtle { background: #fff4e5 !important; }
+  .bg-primary-subtle { background: #eef2ff !important; }
+  .bg-secondary-subtle { background: #f3f4f6 !important; }
+
+  .text-success { color: #16a34a !important; }
+  .text-danger  { color: #ef4444 !important; }
+  .text-warning { color: #f59e0b !important; }
+  .text-primary { color: #3b82f6 !important; }
+  .text-secondary { color: #64748b !important; }
+
+  .stat-box {
+    border-radius: 1rem;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+  }
+
+  .match-item {
+    border: 1px solid #e5e7eb;
+  }
+</style>
+{% endblock %}
