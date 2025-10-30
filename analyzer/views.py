@@ -8,6 +8,10 @@ import os
 import tempfile
 from .models import APKAnalysis
 from .apk_analyzer import APKAnalyzer
+from django.conf import settings
+import sys
+sys.path.append(str(settings.BASE_DIR))  # 모델 코드 경로 임시추가
+# 예: from analyzer.policy_predict import predict_texts
 
 
 def index(request):
@@ -19,6 +23,7 @@ def upload_apk(request):
     """APK 파일 업로드 및 분석 시작"""
     if request.method == 'POST':
         apk_file = request.FILES.get('apk_file')
+        policy_text = request.POST.get('policy_text', '').strip()
         
         if not apk_file:
             messages.error(request, 'APK 파일을 선택해주세요.')
@@ -50,6 +55,19 @@ def upload_apk(request):
             analysis_obj.status = 'analyzing'
             analysis_obj.save()
             
+            # --- 정책 텍스트 라벨 예측 ---
+            policy_labels = []
+            if policy_text:
+                try:
+                    # 코드 위치에 맞게 import 및 예외 처리 필요
+                    from analyzer.policy_predict import predict_texts
+                    res = predict_texts(policy_text)
+                    if isinstance(res, list) and len(res)>0:
+                        policy_labels = res[0].get('pred_labels', [])
+                except Exception as e:
+                    policy_labels = ['predict_fail']
+            analysis_obj.policy_labels = policy_labels
+
             # APK 분석 수행 (CSV 내보내기 포함)
             analyzer = APKAnalyzer(full_path)
             # CSV 파일을 media/analysis_csv/ 디렉토리에 저장

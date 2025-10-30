@@ -159,6 +159,71 @@
         </div>
     </div>
 
+    <!-- 처리방침 vs 실제 앱 권한 비교 구역 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>처리방침 vs 실제 앱 권한 비교</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-align-left me-2"></i>처리방침(예측 라벨)</h6>
+                    <ul>
+                        {% for lbl in analysis.policy_labels %}
+                        <li><span class="badge bg-secondary">{{ lbl }}</span></li>
+                        {% empty %}
+                        <li class="text-muted">- 없음 -</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-key me-2"></i>실제 앱 권한</h6>
+                    <ul>
+                        {% for pr in analysis.permissions %}
+                        <li><code>{{ pr }}</code></li>
+                        {% empty %}
+                        <li class="text-muted">- 없음 -</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <h6 class="mt-3"><i class="fas fa-exclamation-circle me-2"></i>교차 진단 결과</h6>
+            <ul>
+            {% with policy_set=analysis.policy_labels perm_set=analysis.permissions %}
+                {% for label in policy_set %}
+                    {% if label and label not in perm_set %}
+                        <li><span class="badge bg-warning text-dark">처리방침 기재, 실제 권한 미사용: {{ label }}</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% for perm in perm_set %}
+                    {% if perm and perm not in policy_set %}
+                        <li><span class="badge bg-danger">실제 권한 사용, 처리방침 미기재: {{ perm }}</span></li>
+                    {% endif %}
+                {% endfor %}
+            {% endwith %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- 처리방침(예측 라벨) 요약 영역 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-tags me-2"></i>처림방침 예측 라벨 요약</h5>
+        </div>
+        <div class="card-body">
+            {% if analysis.policy_labels and analysis.policy_labels|length > 0 and analysis.policy_labels.0 != 'predict_fail' %}
+                <div>
+                    {% for lbl in analysis.policy_labels %}
+                        <span class="badge bg-info text-dark fs-6 mx-1">{{ lbl }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <span class="text-muted">예측 라벨이 없습니다.</span>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- 권한 목록 -->
     <div class="card mb-4">
         <div class="card-header">

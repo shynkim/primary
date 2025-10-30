@@ -50,6 +50,9 @@ class APKAnalysis(models.Model):
     # 오류 메시지
     error_message = models.TextField(blank=True, verbose_name="오류 메시지")
     
+    # 정책 처리방침 예측 라벨
+    policy_labels = models.JSONField(default=list, verbose_name="처리방침 예측 라벨")
+    
     class Meta:
         verbose_name = "APK 분석"
         verbose_name_plural = "APK 분석 목록"
