@@ -2,6 +2,7 @@ from django.db import models
 import json
 
 class APKAnalysis(models.Model):
+    policy_sentence_labels = models.JSONField(default=list, blank=True)  # ← 핵심
     """APK 파일 분석 결과를 저장하는 모델"""
     
     STATUS_CHOICES = [
