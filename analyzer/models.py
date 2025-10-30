@@ -49,7 +49,11 @@ class APKAnalysis(models.Model):
     
     # 오류 메시지
     error_message = models.TextField(blank=True, verbose_name="오류 메시지")
-    
+        
+    policy_result = models.JSONField(default=dict, blank=True)
+    comparison_result = models.JSONField(default=dict, blank=True)
+
+
     class Meta:
         verbose_name = "APK 분석"
         verbose_name_plural = "APK 분석 목록"

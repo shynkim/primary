@@ -3,90 +3,132 @@
 {% block title %}APK 업로드 - APK 분석기{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">
-                    <i class="fas fa-upload me-2"></i>APK 파일 업로드
-                </h4>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{% url 'analyzer:upload_apk' %}" enctype="multipart/form-data" id="uploadForm">
-                    {% csrf_token %}
-                    
-                    <div class="upload-area" id="uploadArea">
-                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                        <h5>APK 파일을 드래그하거나 클릭하여 선택하세요</h5>
-                        <p class="text-muted">최대 50MB까지 업로드 가능합니다</p>
-                        <input type="file" name="apk_file" id="apkFile" accept=".apk" class="d-none" required>
-                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('apkFile').click()">
-                            <i class="fas fa-folder-open me-2"></i>파일 선택
-                        </button>
-                    </div>
-                    
-                    <div id="fileInfo" class="mt-3" style="display: none;">
-                        <div class="alert alert-info">
-                            <i class="fas fa-file me-2"></i>
-                            <strong>선택된 파일:</strong> <span id="fileName"></span>
-                            <br>
-                            <small>크기: <span id="fileSize"></span></small>
+<div class="container py-5">
+    <!-- Hero -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10 text-center">
+            <h1 class="display-3" style="font-family: 'Georgia', 'Times New Roman', serif; letter-spacing:0.05em; font-weight: 300;">APK & POLICY<br>ANALYZER</h1>
+            <p class="text-muted mt-4" style="font-size: 0.95rem;">Upload an APK and an optional privacy policy to get a security and policy comparison report</p>
+        </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="uploadSection" class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <form method="post" action="{% url 'analyzer:upload_apk' %}" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        <div class="upload-area" id="apkUploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>APK 파일을 드래그하거나 클릭하여 선택하세요</h5>
+                            <p class="text-muted">최대 150MB까지 업로드 가능합니다</p>
+                            <input type="file" name="apk_file" id="apkFile" accept=".apk" class="d-none" required>
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('apkFile').click()">
+                                <i class="fas fa-folder-open me-2"></i>APK 파일 선택
+                            </button>
                         </div>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
-                            <i class="fas fa-search me-2"></i>분석 시작
-                        </button>
-                    </div>
-                </form>
+
+                        <div id="apkFileInfo" class="mt-2" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file me-2"></i>
+                                <strong>선택된 APK:</strong> <span id="apkFileName"></span>
+                                <br>
+                                <small>크기: <span id="apkFileSize"></span></small>
+                            </div>
+                        </div>
+
+                        <div class="upload-area mt-4" id="policyUploadArea">
+                            <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                            <h5>처리방침 파일을 드래그하거나 클릭하여 선택하세요</h5>
+                            <p class="text-muted">.txt, .pdf, .docx 형식 지원 (선택사항)</p>
+                            <input type="file" name="policy_file" id="policyFile" accept=".txt,.pdf,.doc,.docx" class="d-none">
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('policyFile').click()">
+                                <i class="fas fa-folder-open me-2"></i>처리방침 파일 선택
+                            </button>
+                        </div>
+
+                        <div id="policyFileInfo" class="mt-2" style="display: none;">
+                            <div class="alert alert-secondary">
+                                <i class="fas fa-file-alt me-2"></i>
+                                <strong>선택된 처리방침:</strong> <span id="policyFileName"></span>
+                                <br>
+                                <small>크기: <span id="policyFileSize"></span></small>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                                <i class="fas fa-search me-2"></i>분석 시작
+                            </button>
+                        </div>
+                        
+                        <div id="progressArea" class="mt-4" style="display: none;">
+                            <div class="progress" style="height: 20px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                    role="progressbar" style="width: 100%;">
+                                </div>
+                            </div>
+                            <div id="progressText" class="text-center small mt-2">분석 중... 잠시만 기다려주세요</div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>분석 기능
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-cog me-2"></i>기본 정보</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>패키지명 및 버전 정보</li>
-                            <li><i class="fas fa-check text-success me-2"></i>SDK 버전 정보</li>
-                            <li><i class="fas fa-check text-success me-2"></i>앱 이름 및 메인 액티비티</li>
-                        </ul>
+    </div>
+
+    <!-- We analyze this -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10">
+            <h3 class="text-center mb-5">We analyze this</h3>
+            <div class="row text-center">
+                <div class="col-md-3 mb-4">
+                    <div class="mb-3">
+                        <i class="fas fa-info-circle fa-2x text-primary"></i>
                     </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-shield-alt me-2"></i>보안 분석</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>권한 분석</li>
-                            <li><i class="fas fa-check text-success me-2"></i>위험한 API 호출 검사</li>
-                            <li><i class="fas fa-check text-success me-2"></i>보안 설정 검사</li>
-                        </ul>
-                    </div>
+                    <h6 class="mb-3 fw-bold">기본 정보</h6>
+                    <p class="text-muted small mb-1">패키지명 및 버전 정보</p>
+                    <p class="text-muted small mb-1">SDK 버전 정보</p>
+                    <p class="text-muted small mb-1">앱 이름 및 버전 메타데이터</p>
                 </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-mobile-alt me-2"></i>컴포넌트 분석</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>액티비티 목록</li>
-                            <li><i class="fas fa-check text-success me-2"></i>서비스 목록</li>
-                            <li><i class="fas fa-check text-success me-2"></i>리시버 목록</li>
-                        </ul>
+                <div class="col-md-3 mb-4">
+                    <div class="mb-3">
+                        <i class="fas fa-shield-alt fa-2x text-primary"></i>
                     </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-chart-bar me-2"></i>상세 분석</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success me-2"></i>Intent Filter 분석</li>
-                            <li><i class="fas fa-check text-success me-2"></i>API 호출 패턴 분석</li>
-                            <li><i class="fas fa-check text-success me-2"></i>보안 취약점 검사</li>
-                        </ul>
+                    <h6 class="mb-3 fw-bold">보안 분석</h6>
+                    <p class="text-muted small mb-1">권한 분석</p>
+                    <p class="text-muted small mb-1">위험한 API 추출 검사</p>
+                    <p class="text-muted small mb-1">보안 설정 검사</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="mb-3">
+                        <i class="fas fa-cubes fa-2x text-primary"></i>
                     </div>
+                    <h6 class="mb-3 fw-bold">컴포넌트 분석</h6>
+                    <p class="text-muted small mb-1">액티비티 목록 추출</p>
+                    <p class="text-muted small mb-1">서비스 추출</p>
+                    <p class="text-muted small mb-1">리시버 추출</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line fa-2x text-primary"></i>
+                    </div>
+                    <h6 class="mb-3 fw-bold">상세 분석</h6>
+                    <p class="text-muted small mb-1">Intent Filter 분석</p>
+                    <p class="text-muted small mb-1">API 호출 패턴 분석</p>
+                    <p class="text-muted small mb-1">보안 취약점 검사</p>
+                    <p class="text-muted small mb-1">차별화된 비교 분석</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Connect with us -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8 text-center">
+            <h3 class="mb-3">Connect with us</h3>
+            <p class="text-muted mb-4">Schedule a quick call to learn how this tool can help your analysis workflow</p>
+            <a href="#" class="btn btn-primary btn-lg px-5" style="border-radius: 50px;">Learn More</a>
         </div>
     </div>
 </div>
@@ -95,61 +137,21 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('apkFile');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
-    const fileSize = document.getElementById('fileSize');
+    console.log('Page loaded');
+    
+    const apkInput = document.getElementById('apkFile');
+    const apkInfo = document.getElementById('apkFileInfo');
+    const apkName = document.getElementById('apkFileName');
+    const apkSize = document.getElementById('apkFileSize');
+
+    const policyInput = document.getElementById('policyFile');
+    const policyInfo = document.getElementById('policyFileInfo');
+    const policyName = document.getElementById('policyFileName');
+    const policySize = document.getElementById('policyFileSize');
+
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadForm = document.getElementById('uploadForm');
-
-    // 파일 선택 시
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            handleFileSelect(file);
-        }
-    });
-
-    // 드래그 앤 드롭
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const file = files[0];
-            if (file.name.toLowerCase().endsWith('.apk')) {
-                fileInput.files = files;
-                handleFileSelect(file);
-            } else {
-                alert('APK 파일만 업로드 가능합니다.');
-            }
-        }
-    });
-
-    function handleFileSelect(file) {
-        // 파일 크기 검증 (50MB)
-        if (file.size > 50 * 1024 * 1024) {
-            alert('파일 크기는 50MB를 초과할 수 없습니다.');
-            return;
-        }
-
-        fileName.textContent = file.name;
-        fileSize.textContent = formatFileSize(file.size);
-        fileInfo.style.display = 'block';
-        uploadBtn.disabled = false;
-    }
+    const progressArea = document.getElementById('progressArea');
 
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
@@ -159,12 +161,40 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // 폼 제출 시 로딩 표시
-    uploadForm.addEventListener('submit', function() {
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>분석 중...';
-        uploadBtn.disabled = true;
+    function handleFileSelect(file, infoBox, nameSpan, sizeSpan) {
+        if (file.size > 150 * 1024 * 1024) {
+            alert('파일 크기는 150MB를 초과할 수 없습니다.');
+            return false;
+        }
+        nameSpan.textContent = file.name;
+        sizeSpan.textContent = formatFileSize(file.size);
+        infoBox.style.display = 'block';
+        return true;
+    }
+
+    apkInput.addEventListener('change', function(e) {
+        if (e.target.files[0]) {
+            console.log('APK selected:', e.target.files[0].name);
+            if (handleFileSelect(e.target.files[0], apkInfo, apkName, apkSize)) {
+                uploadBtn.disabled = false;
+            }
+        }
+    });
+
+    policyInput.addEventListener('change', function(e) {
+        if (e.target.files[0]) {
+            console.log('Policy selected:', e.target.files[0].name);
+            handleFileSelect(e.target.files[0], policyInfo, policyName, policySize);
+        }
+    });
+
+    uploadForm.addEventListener('submit', function(e) {
+        console.log('Form submitting...');
+        
+        uploadBtn.style.display = 'none';
+        progressArea.style.display = 'block';
+    
     });
 });
 </script>
 {% endblock %}
-

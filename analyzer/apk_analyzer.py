@@ -34,7 +34,6 @@ class APKAnalyzer:
         elif isinstance(obj, dict):
             return {str(key): self._make_json_serializable(value) for key, value in obj.items()}
         else:
-            # MUTF8String 및 기타 Androguard 객체들을 문자열로 변환
             return str(obj)
         
     def analyze(self):
