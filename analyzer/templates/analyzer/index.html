@@ -10,35 +10,36 @@
     <div class="card-body p-4">
       <h5 class="fw-bold mb-2">시작하기</h5>
       <p class="text-muted mb-3">
-        앱의 APK 파일과 개인정보 처리방침 문서를 업로드하면, 두 문서 간의 일치 여부를 자동으로 검증하고 개선 방안을 제안해드립니다.
+        앱의 APK 파일과 개인정보 처리방침(파일 또는 텍스트)을 제출하면,
+        두 문서 간의 일치 여부를 자동으로 검증하고 개선 방안을 제안합니다.
       </p>
       <div class="d-flex flex-wrap gap-4">
         <div class="d-flex align-items-center gap-2 step">
           <span class="step-num">1</span>
           <div>
-            <div class="fw-semibold">APK 파일 업로드</div>
-            <div class="text-muted small">앱의 권한 정보를 추출합니다</div>
+            <div class="fw-semibold">APK 업로드</div>
+            <div class="text-muted small">앱 권한을 추출합니다</div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 step">
           <span class="step-num">2</span>
           <div>
-            <div class="fw-semibold">처리방침 업로드</div>
+            <div class="fw-semibold">처리방침 업로드 또는 텍스트 입력</div>
             <div class="text-muted small">개인정보 수집 항목을 분석합니다</div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 step">
           <span class="step-num">3</span>
           <div>
-            <div class="fw-semibold">비교 및 분석</div>
-            <div class="text-muted small">일치 여부와 개선사항 확인</div>
+            <div class="fw-semibold">비교/권고</div>
+            <div class="text-muted small">일치도 및 개선안 확인</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Upload form -->
+  <!-- Upload form (기존 제출 흐름 유지) -->
   <form method="post" action="{% url 'analyzer:upload_apk' %}" enctype="multipart/form-data" id="uploadForm">
     {% csrf_token %}
 
@@ -51,15 +52,11 @@
               <div class="avatar bg-success-subtle text-success-emphasis"><i class="fa-solid fa-cube"></i></div>
               <div>
                 <div class="fw-semibold">APK 파일</div>
-                <div class="text-muted small">Android 앱 패키지 파일</div>
+                <div class="text-muted small">Android 앱 패키지(.apk)</div>
               </div>
             </div>
 
-            <div id="apkDrop"
-                 class="dropzone"
-                 tabindex="0"
-                 role="button"
-                 aria-label="APK 업로드 영역 (파일 선택 또는 드래그 앤 드롭)">
+            <div id="apkDrop" class="dropzone" tabindex="0" role="button" aria-label="APK 업로드">
               <div class="text-center">
                 <i class="fa-solid fa-upload fa-2x mb-2 text-primary"></i>
                 <div class="fw-semibold">파일 선택 또는 드래그 앤 드롭</div>
@@ -81,24 +78,107 @@
               <div class="avatar bg-purple-subtle text-purple"><i class="fa-solid fa-file-lines"></i></div>
               <div>
                 <div class="fw-semibold">개인정보 처리방침</div>
-                <div class="text-muted small">PDF, DOC, TXT 형식</div>
+                <div class="text-muted small">PDF/DOC/DOCX/TXT 파일 또는 직접 텍스트</div>
               </div>
             </div>
 
-            <div id="policyDrop"
-                 class="dropzone"
-                 tabindex="0"
-                 role="button"
-                 aria-label="처리방침 업로드 영역 (파일 선택 또는 드래그 앤 드롭)">
-              <div class="text-center">
-                <i class="fa-solid fa-upload fa-2x mb-2 text-primary"></i>
-                <div class="fw-semibold">파일 선택 또는 드래그 앤 드롭</div>
-                <div class="text-muted small">PDF, DOC, DOCX, TXT 파일 지원</div>
-              </div>
-              <input id="policyFile" name="policy_file" type="file" accept=".pdf,.doc,.docx,.txt" class="d-none" required>
-            </div>
+            <!-- Tabs -->
+            <ul class="nav nav-tabs" id="policyTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileTab"
+                        type="button" role="tab">파일 업로드</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#textTab"
+                        type="button" role="tab">직접 입력</button>
+              </li>
+            </ul>
 
-            <div id="policyChip" class="mt-3 d-none"></div>
+            <div class="tab-content mt-3" id="policyTabsContent">
+              <!-- 파일 업로드 -->
+              <div class="tab-pane fade show active" id="fileTab" role="tabpanel">
+                <div id="policyDrop" class="dropzone" tabindex="0" role="button" aria-label="처리방침 업로드">
+                  <div class="text-center">
+                    <i class="fa-solid fa-upload fa-2x mb-2 text-primary"></i>
+                    <div class="fw-semibold">파일 선택 또는 드래그 앤 드롭</div>
+                    <div class="text-muted small">PDF, DOC, DOCX, TXT</div>
+                  </div>
+                  <input id="policyFile" name="policy_file" type="file"
+                         accept=".pdf,.doc,.docx,.txt" class="d-none">
+                </div>
+                <div id="policyChip" class="mt-3 d-none"></div>
+              </div>
+
+              <!-- 텍스트 입력 -->
+              <div class="tab-pane fade" id="textTab" role="tabpanel">
+                <textarea id="policyText" name="policy_text" rows="10"
+                          class="form-control"
+                          placeholder="개인정보 처리방침 내용을 여기에 붙여넣으세요..."
+                          style="resize:none"></textarea>
+
+                <!-- 고급 옵션: policy_predict.py 파라미터 매핑 -->
+                <div class="mt-3 p-3 rounded-3 border bg-light-subtle">
+                  <div class="fw-semibold mb-2">분석 옵션</div>
+                  <div class="row g-3">
+                    <div class="col-6">
+                      <label class="form-label small mb-1">멀티라벨 임계치 (th_multi)</label>
+                      <input type="number" step="0.01" min="0" max="1" class="form-control"
+                             id="thMulti" name="th_multi" value="0.50">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1">수집/비수집 임계치 (th_pol)</label>
+                      <input type="number" step="0.01" min="0" max="1" class="form-control"
+                             id="thPol" name="th_pol" value="0.50">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1">토크나이저 최대 길이 (max_length)</label>
+                      <input type="number" min="32" max="2048" class="form-control"
+                             id="maxLength" name="max_length" value="256">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1">집계 방식 (aggregate)</label>
+                      <select id="aggregate" name="aggregate" class="form-select">
+                        <option value="max" selected>max (권장)</option>
+                        <option value="mean">mean</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="splitLong" name="split_long_doc">
+                        <label class="form-check-label" for="splitLong">긴 문서를 문장 단위로 분할 후 집계 (split_long_doc)</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex gap-2 mt-3">
+                    <button type="button" id="quickPredictBtn" class="btn btn-outline-primary">
+                      <i class="fa-solid fa-wand-magic-sparkles me-1"></i> 정책만 빠르게 분석 (베타)
+                    </button>
+                    <div class="text-muted small align-self-center">
+                      * 텍스트 탭에서만 사용 · 파일 업로드와는 별개로 즉시 예측 결과를 보여줍니다.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 빠른 분석 결과 -->
+                <div id="predictResult" class="mt-3 d-none">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="fw-semibold">예측 결과</div>
+                        <button type="button" id="clearResult" class="btn btn-sm btn-link">지우기</button>
+                      </div>
+                      <div id="predSummary" class="mb-3"></div>
+                      <div id="predTableWrap" class="table-responsive"></div>
+                      <div class="text-muted small">
+                        라벨 이름은 <code>labels.json</code> 기준이며, 임계치는 <code>thresholds.json</code>이 있으면 그 값을 사용합니다(없으면 위 옵션 적용).
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div> <!-- /tab-content -->
           </div>
         </div>
       </div>
@@ -111,53 +191,61 @@
       </button>
       <div class="text-muted small mt-2">최대 50MB / 파일</div>
     </div>
-  </form>
 
+    <!-- (기존 제출에도 옵션 전달하고 싶다면 hidden으로 전송) -->
+    <input type="hidden" name="form_th_multi" id="form_th_multi" value="0.50">
+    <input type="hidden" name="form_th_pol" id="form_th_pol" value="0.50">
+    <input type="hidden" name="form_max_length" id="form_max_length" value="256">
+    <input type="hidden" name="form_aggregate" id="form_aggregate" value="max">
+    <input type="hidden" name="form_split_long_doc" id="form_split_long_doc" value="0">
+  </form>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-  /* 배경과 카드 톤을 캡처 느낌으로 */
-  body { background: radial-gradient(900px 500px at 10% -10%, #e9eeff 0%, transparent 60%),
-                    radial-gradient(900px 500px at 110% -10%, #e9ffee 0%, transparent 60%),
-                    #f6f9ff; }
-  .hero-surface { border:1px solid #e6e9f4; }
-  .step .step-num{
-    width:28px;height:28px;border-radius:999px;
-    display:grid;place-items:center;
-    color:#fff;background:#6a8dff;font-weight:700;
-  }
-  .avatar{
-    width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px;
-  }
-  .bg-purple-subtle{ background:#f2e8ff; }
-  .text-purple{ color:#7c3aed; }
+body { background: radial-gradient(900px 500px at 10% -10%, #e9eeff 0%, transparent 60%),
+                  radial-gradient(900px 500px at 110% -10%, #e9ffee 0%, transparent 60%),
+                  #f6f9ff; }
+.hero-surface { border:1px solid #e6e9f4; }
+.step .step-num{
+  width:28px;height:28px;border-radius:999px;
+  display:grid;place-items:center;
+  color:#fff;background:#6a8dff;font-weight:700;
+}
+.avatar{ width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px; }
+.bg-purple-subtle{ background:#f2e8ff; }
+.text-purple{ color:#7c3aed; }
 
-  .dropzone{
-    border:2px dashed #c7d2fe;
-    border-radius:14px;
-    background:#fafbff;
-    padding:28px;
-    min-height:160px;
-    display:flex;align-items:center;justify-content:center;
-    transition: all .15s ease;
-    outline: none;
-  }
-  .dropzone.dragover{ background:#eef2ff; border-color:#6a8dff; }
-  .file-chip{
-    display:inline-flex;align-items:center;gap:.5rem;
-    border:1px solid #dee6ff;background:#eef2ff;color:#334155;
-    padding:.4rem .6rem;border-radius:999px;font-size:.85rem;max-width:100%;
-  }
-  .file-chip small{ opacity:.7; }
+.dropzone{
+  border:2px dashed #c7d2fe;
+  border-radius:14px;
+  background:#fafbff;
+  padding:28px;
+  min-height:160px;
+  display:flex;align-items:center;justify-content:center;
+  transition: all .15s ease;
+  outline: none;
+}
+.dropzone.dragover{ background:#eef2ff; border-color:#6a8dff; }
+.file-chip{
+  display:inline-flex;align-items:center;gap:.5rem;
+  border:1px solid #dee6ff;background:#eef2ff;color:#334155;
+  padding:.4rem .6rem;border-radius:999px;font-size:.85rem;max-width:100%;
+}
+.file-chip small{ opacity:.7; }
+.badge-soft{
+  border:1px solid #e4e7ef;background:#f6f7fb;border-radius:999px;padding:.15rem .5rem;
+}
+.polarity-collect{ color:#0a7a1f; }
+.polarity-not{ color:#9b1c1c; }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const MAX = 50 * 1024 * 1024; // 50MB
+  const MAX = 50 * 1024 * 1024;
 
   const apkDrop   = document.getElementById('apkDrop');
   const policyDrop= document.getElementById('policyDrop');
@@ -167,6 +255,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const polChip   = document.getElementById('policyChip');
   const btn       = document.getElementById('uploadBtn');
   const form      = document.getElementById('uploadForm');
+  const polText   = document.getElementById('policyText');
+
+  // 옵션 컨트롤
+  const thMulti   = document.getElementById('thMulti');
+  const thPol     = document.getElementById('thPol');
+  const maxLength = document.getElementById('maxLength');
+  const aggregate = document.getElementById('aggregate');
+  const splitLong = document.getElementById('splitLong');
+
+  // hidden (폼 제출 시 함께 전달하고 싶을 때)
+  const hThMulti   = document.getElementById('form_th_multi');
+  const hThPol     = document.getElementById('form_th_pol');
+  const hMaxLength = document.getElementById('form_max_length');
+  const hAggregate = document.getElementById('form_aggregate');
+  const hSplitLong = document.getElementById('form_split_long_doc');
+
+  // 빠른 분석 UI
+  const quickBtn   = document.getElementById('quickPredictBtn');
+  const resultBox  = document.getElementById('predictResult');
+  const predSummary= document.getElementById('predSummary');
+  const predTableWrap = document.getElementById('predTableWrap');
+  const clearBtn   = document.getElementById('clearResult');
 
   function human(n){
     if(n===0) return '0 B';
@@ -183,7 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
     el.classList.remove('d-none');
   }
   function enableIfReady(){
-    btn.disabled = !(apkInput.files?.length && polInput.files?.length);
+    const hasApk = apkInput.files?.length;
+    const hasPolicyFile = polInput.files?.length;
+    const hasPolicyText = polText.value.trim().length > 10;
+    btn.disabled = !(hasApk && (hasPolicyFile || hasPolicyText));
   }
   function over(e){ e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('dragover'); }
   function leave(e){ e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('dragover'); }
@@ -194,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const ok = exts.some(ext => f.name.toLowerCase().endsWith(ext));
       if(!ok){ alert(exts.join(', ')+' 파일만 업로드 가능합니다.'); return; }
       if(f.size > MAX){ alert('파일 크기는 50MB를 초과할 수 없습니다.'); return; }
-      // 파일 주입
       input.files = e.dataTransfer.files;
       setChip(chip, f); enableIfReady();
     }
@@ -211,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function clickOpen(input){ input.click(); }
   function keyOpen(input){ return (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); input.click(); } }; }
 
-  // APK 바인딩
+  // APK
   ['dragenter','dragover'].forEach(ev => apkDrop.addEventListener(ev, over));
   ['dragleave','drop'].forEach(ev => apkDrop.addEventListener(ev, leave));
   apkDrop.addEventListener('drop', dropTo(apkInput, apkChip, ['.apk']));
@@ -219,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
   apkDrop.addEventListener('keydown', keyOpen(apkInput));
   apkInput.addEventListener('change', choose(apkInput, apkChip, ['.apk']));
 
-  // Policy 바인딩
+  // Policy (file)
   ['dragenter','dragover'].forEach(ev => policyDrop.addEventListener(ev, over));
   ['dragleave','drop'].forEach(ev => policyDrop.addEventListener(ev, leave));
   policyDrop.addEventListener('drop', dropTo(polInput, polChip, ['.pdf','.doc','.docx','.txt']));
@@ -227,11 +339,127 @@ document.addEventListener('DOMContentLoaded', () => {
   policyDrop.addEventListener('keydown', keyOpen(polInput));
   polInput.addEventListener('change', choose(polInput, polChip, ['.pdf','.doc','.docx','.txt']));
 
-  // 제출 로딩
+  // Policy (text)
+  polText.addEventListener('input', enableIfReady);
+
+  // 옵션 값 변경 시 hidden 동기화 (서버 제출 시 함께 전달하고 싶을 때)
+  function syncHidden(){
+    hThMulti.value   = Number(thMulti.value || 0.5).toFixed(2);
+    hThPol.value     = Number(thPol.value || 0.5).toFixed(2);
+    hMaxLength.value = parseInt(maxLength.value || 256, 10);
+    hAggregate.value = String(aggregate.value || 'max');
+    hSplitLong.value = splitLong.checked ? '1' : '0';
+  }
+  [thMulti, thPol, maxLength, aggregate, splitLong].forEach(el => {
+    el.addEventListener('change', syncHidden);
+    el.addEventListener('input', syncHidden);
+  });
+  syncHidden();
+
+  // 제출 버튼 UI
+  const btnText = btn.innerHTML;
   form.addEventListener('submit', ()=>{
+    syncHidden();
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>분석 중...';
     btn.disabled = true;
   });
+
+  // 빠른 분석(텍스트만) 호출
+  async function quickPredict(){
+    const text = polText.value.trim();
+    if(text.length < 10){
+      alert('처리방침 텍스트를 10자 이상 입력하세요.');
+      return;
+    }
+    // 파일 업로드 탭에서 선택된 파일이 있으면 혼동 방지 안내
+    if(polInput.files?.length){
+      if(!confirm('현재 파일이 선택되어 있습니다. 텍스트만 빠르게 분석하시겠습니까?')) return;
+    }
+
+    quickBtn.disabled = true;
+    const oldHTML = quickBtn.innerHTML;
+    quickBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> 예측 중...';
+
+    const payload = {
+      texts: [text],
+      th_multi: Number(thMulti.value || 0.5),
+      th_pol: Number(thPol.value || 0.5),
+      max_length: parseInt(maxLength.value || 256, 10),
+      split_long_doc: !!splitLong.checked,
+      aggregate: String(aggregate.value || 'max')
+    };
+
+    try{
+      const res = await fetch("{% url 'analyzer:policy_predict_api' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok){
+        const txt = await res.text();
+        throw new Error(`예측 API 오류 (${res.status})\n${txt}`);
+      }
+      const data = await res.json(); // policy_predict.py의 반환(list[dict]) 그대로라고 가정
+      renderPredict(data);
+    }catch(err){
+      console.error(err);
+      alert('예측 중 오류가 발생했습니다. 콘솔을 확인하세요.');
+    }finally{
+      quickBtn.disabled = false;
+      quickBtn.innerHTML = oldHTML;
+    }
+  }
+
+  function renderPredict(arr){
+    // 기대 포맷: [ { input_text, pred_labels:[], pred_polarity: "collect"|"not_collect", probs_multi: {lab: prob}, prob_polarity_collect: float }, ... ]
+    if(!Array.isArray(arr) || !arr.length){
+      predSummary.innerHTML = '<span class="text-muted">결과가 비어 있습니다.</span>';
+      predTableWrap.innerHTML = '';
+      resultBox.classList.remove('d-none');
+      return;
+    }
+    const r = arr[0];
+
+    // Summary
+    const pol = r.pred_polarity === 'collect';
+    const polBadge = pol
+      ? `<span class="badge-soft polarity-collect"><i class="fa-solid fa-toggle-on me-1"></i>수집(collect)</span>`
+      : `<span class="badge-soft polarity-not"><i class="fa-regular fa-circle-xmark me-1"></i>비수집(not_collect)</span>`;
+    const polProb = (Number(r.prob_polarity_collect || 0)*100).toFixed(1);
+    const labels = (r.pred_labels||[]).map(x=>`<span class="badge-soft me-1">${x}</span>`).join(' ');
+    predSummary.innerHTML = `
+      <div class="mb-1">수집 여부: ${polBadge} <span class="text-muted ms-1 small">P(collect)=${polProb}%</span></div>
+      <div>예측 라벨: ${labels || '<span class="text-muted">없음</span>'}</div>
+    `;
+
+    // Table (probs)
+    const probs = r.probs_multi || {};
+    const rows = Object.keys(probs).sort().map(lab=>{
+      const p = (Number(probs[lab] || 0)*100).toFixed(2);
+      return `<tr><td class="fw-semibold">${lab}</td><td>${p}%</td></tr>`;
+    }).join('');
+    predTableWrap.innerHTML = `
+      <table class="table table-sm align-middle">
+        <thead><tr><th>라벨</th><th>확률</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    resultBox.classList.remove('d-none');
+  }
+
+  clearBtn.addEventListener('click', ()=>{
+    resultBox.classList.add('d-none');
+    predSummary.innerHTML = '';
+    predTableWrap.innerHTML = '';
+  });
+  quickBtn.addEventListener('click', quickPredict);
+
+  // Initial
+  enableIfReady();
 });
 </script>
 {% endblock %}

@@ -1,82 +1,70 @@
 {% extends 'analyzer/base.html' %}
-{% block title %}{{ analysis.file_name }} - 비교 분석 결과{% endblock %}
+{% block title %}{{ analysis.file_name }} - 개인정보 항목 비교 결과{% endblock %}
 
 {% block content %}
 <div class="container-xxl py-4">
 
-  <!-- SECTION 1: 분석 결과 -->
+  <!-- SECTION 1: APK 내부 권한 라벨링 -->
   <div class="mb-5">
-    <h4 class="fw-bold mb-1">분석 결과</h4>
-    <p class="text-muted mb-4">APK 파일과 개인정보 처리방침에서 추출된 정보입니다</p>
+    <h4 class="fw-bold mb-1">📱 APK 권한 기반 개인정보 항목</h4>
+    <p class="text-muted mb-4">앱이 실제로 접근 가능한 개인정보 항목입니다.</p>
 
-    <div class="row g-4">
-      <!-- APK 권한 -->
-      <div class="col-lg-6">
-        <div class="card border-0 shadow-sm rounded-4">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center mb-3 gap-2">
-              <div class="avatar bg-success-subtle text-success"><i class="fa-solid fa-cube"></i></div>
-              <div>
-                <div class="fw-semibold">APK 파일 권한</div>
-                <div class="text-muted small">{{ analysis.apk_permissions|length }}개 권한 감지됨</div>
-              </div>
-            </div>
-            {% for perm in analysis.apk_permissions %}
-              <div class="p-3 mb-2 border rounded-3 bg-light-subtle d-flex justify-content-between align-items-center">
-                <div>
-                  <div class="fw-semibold">{{ perm.name }}</div>
-                  <div class="text-muted small">{{ perm.description }}</div>
-                </div>
-                <span class="badge rounded-pill bg-primary-subtle text-primary">{{ perm.category }}</span>
-              </div>
-            {% empty %}
-              <p class="text-muted">감지된 권한이 없습니다.</p>
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        {% if analysis.permissions %}
+          <div class="mb-3"><strong>총 {{ analysis.permissions|length }}개 권한 감지됨</strong></div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for p in analysis.permissions %}
+              <span class="badge bg-primary-subtle text-primary">{{ p }}</span>
             {% endfor %}
           </div>
-        </div>
-      </div>
-
-      <!-- 처리방침 항목 -->
-      <div class="col-lg-6">
-        <div class="card border-0 shadow-sm rounded-4">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center mb-3 gap-2">
-              <div class="avatar bg-purple-subtle text-purple"><i class="fa-solid fa-file-lines"></i></div>
-              <div>
-                <div class="fw-semibold">처리방침 수집 항목</div>
-                <div class="text-muted small">{{ analysis.policy_items|length }}개 항목 발견됨</div>
-              </div>
-            </div>
-            {% for item in analysis.policy_items %}
-              <div class="p-3 mb-2 border rounded-3 bg-light-subtle">
-                <div class="fw-semibold d-flex justify-content-between">
-                  {{ item.name }}
-                  <span class="badge rounded-pill bg-secondary-subtle text-secondary">{{ item.category }}</span>
-                </div>
-                <div class="small text-muted mt-1">{{ item.details }}</div>
-              </div>
-            {% empty %}
-              <p class="text-muted">발견된 항목이 없습니다.</p>
-            {% endfor %}
-          </div>
-        </div>
+        {% else %}
+          <p class="text-muted">감지된 권한이 없습니다.</p>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <!-- SECTION 2: 비교 결과 -->
+  <!-- SECTION 2: 처리방침 텍스트 라벨링 -->
   <div class="mb-5">
-    <h4 class="fw-bold mb-1">비교 결과</h4>
-    <p class="text-muted mb-4">앱 권한과 개인정보 처리방침의 일치도 분석</p>
+    <h4 class="fw-bold mb-1">📄 처리방침 기반 개인정보 항목</h4>
+    <p class="text-muted mb-4">AI 모델이 처리방침 텍스트를 분석하여 인식한 개인정보 항목입니다.</p>
 
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        {% if analysis.policy_labels %}
+          <div class="mb-3"><strong>총 {{ analysis.policy_labels|length }}개 항목 인식됨</strong></div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for label in analysis.policy_labels %}
+              <span class="badge bg-secondary-subtle text-secondary">{{ label }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">처리방침에서 인식된 개인정보 항목이 없습니다.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: 비교 결과 -->
+  <div class="mb-5">
+    <h4 class="fw-bold mb-1">🔍 비교 결과 (APK vs 처리방침)</h4>
+    <p class="text-muted mb-4">앱이 실제로 접근하는 항목과 처리방침에 명시된 항목 간의 일치도를 분석합니다.</p>
+
+    {% with comp=analysis.comparison %}
     <div class="card border-0 shadow-sm rounded-4 mb-4">
       <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <div>전체 일치도 <small class="text-muted">({{ analysis.comparison.matches }}개 일치 / {{ analysis.comparison.total }}개 항목 중)</small></div>
-          <h3 class="fw-bold text-warning mb-0">{{ analysis.comparison.rate }}%</h3>
+          <div>
+            전체 일치도
+            <small class="text-muted">
+              ({{ comp.totals.matched }}개 일치 / {{ comp.totals.total }}개 항목 중)
+            </small>
+          </div>
+          <h3 class="fw-bold text-warning mb-0">{{ comp.totals.percentage }}%</h3>
         </div>
         <div class="progress bg-light" style="height:10px;">
-          <div class="progress-bar bg-warning" style="width: {{ analysis.comparison.rate }}%"></div>
+          <div class="progress-bar bg-warning" style="width: {{ comp.totals.percentage }}%"></div>
         </div>
       </div>
     </div>
@@ -84,20 +72,20 @@
     <div class="row g-3 mb-4">
       <div class="col-md-4">
         <div class="stat-box bg-success-subtle text-success">
-          <div class="h4 mb-0">{{ analysis.comparison.matches }}</div>
-          <small>일치</small>
+          <div class="h4 mb-0">{{ comp.totals.matched }}</div>
+          <small>일치 항목</small>
         </div>
       </div>
       <div class="col-md-4">
         <div class="stat-box bg-danger-subtle text-danger">
-          <div class="h4 mb-0">{{ analysis.comparison.missing_policy }}</div>
-          <small>처리방침 누락</small>
+          <div class="h4 mb-0">{{ comp.only_perm|length }}</div>
+          <small>앱에는 있으나 처리방침에 없음</small>
         </div>
       </div>
       <div class="col-md-4">
         <div class="stat-box bg-warning-subtle text-warning">
-          <div class="h4 mb-0">{{ analysis.comparison.not_in_app }}</div>
-          <small>앱 권한 없음</small>
+          <div class="h4 mb-0">{{ comp.only_policy|length }}</div>
+          <small>처리방침에는 있으나 앱에는 없음</small>
         </div>
       </div>
     </div>
@@ -107,75 +95,39 @@
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body">
-            <h6 class="text-success"><i class="fa-regular fa-circle-check me-2"></i>일치 항목 ({{ analysis.comparison.matches }})</h6>
-            {% for m in analysis.comparison.matched_list %}
-              <div class="match-item bg-success-subtle text-success p-2 rounded-3 mb-1 small">{{ m }}</div>
+            <h6 class="text-success mb-3"><i class="fa-regular fa-circle-check me-2"></i>일치 항목</h6>
+            {% for l in comp.matched %}
+              <div class="match-item bg-success-subtle text-success p-2 rounded-3 mb-1 small">{{ l }}</div>
             {% empty %}<p class="text-muted small">일치 항목 없음</p>{% endfor %}
           </div>
         </div>
       </div>
 
-      <!-- 처리방침 누락 -->
+      <!-- 앱에는 있으나 처리방침에 없음 -->
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body">
-            <h6 class="text-danger"><i class="fa-regular fa-circle-xmark me-2"></i>처리방침 누락 ({{ analysis.comparison.missing_policy }})</h6>
-            {% for m in analysis.comparison.missing_list %}
-              <div class="match-item bg-danger-subtle text-danger p-2 rounded-3 mb-1 small">{{ m }}</div>
+            <h6 class="text-danger mb-3"><i class="fa-regular fa-circle-xmark me-2"></i>앱에만 존재 (미고지)</h6>
+            {% for l in comp.only_perm %}
+              <div class="match-item bg-danger-subtle text-danger p-2 rounded-3 mb-1 small">{{ l }}</div>
             {% empty %}<p class="text-muted small">없음</p>{% endfor %}
           </div>
         </div>
       </div>
 
-      <!-- 앱 권한 없음 -->
+      <!-- 처리방침에는 있으나 앱에 없음 -->
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body">
-            <h6 class="text-warning"><i class="fa-regular fa-circle-exclamation me-2"></i>앱 권한 없음 ({{ analysis.comparison.not_in_app }})</h6>
-            {% for m in analysis.comparison.not_in_app_list %}
-              <div class="match-item bg-warning-subtle text-warning p-2 rounded-3 mb-1 small">{{ m }}</div>
+            <h6 class="text-warning mb-3"><i class="fa-regular fa-circle-exclamation me-2"></i>처리방침에만 존재 (불필요 명시)</h6>
+            {% for l in comp.only_policy %}
+              <div class="match-item bg-warning-subtle text-warning p-2 rounded-3 mb-1 small">{{ l }}</div>
             {% empty %}<p class="text-muted small">없음</p>{% endfor %}
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- SECTION 3: 권고사항
-  <div>
-    <h4 class="fw-bold mb-1">권고사항</h4>
-    <p class="text-muted mb-4">개인정보보호법 준수를 위한 개선 방향</p>
-
-    {% if analysis.recommendations.urgent %}
-    <div class="alert alert-danger rounded-4 p-4 mb-4">
-      <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>긴급 조치 필요 <span class="badge bg-danger text-white ms-1">우선순위 높음</span></h6>
-      <p class="text-muted small mb-2">앱에서 수집하는 정보가 처리방침에 명시되지 않았습니다.</p>
-      <div class="mb-2"><strong>법적 위험:</strong> 개인정보보호법 제15조 위반 가능성 — 미고지 시 과태료 대상</div>
-      <div class="mt-3"><strong>조치 방법:</strong><br>{{ analysis.recommendations.urgent_action }}</div>
-      <div class="mt-3"><strong>권장 문구 예시:</strong>
-        <pre class="bg-white rounded-3 p-3 small">{{ analysis.recommendations.urgent_template }}</pre>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if analysis.recommendations.review %}
-    <div class="alert alert-warning rounded-4 p-4 mb-4">
-      <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-circle-exclamation me-2"></i>검토 필요 <span class="badge bg-warning text-dark ms-1">주의</span></h6>
-      <div class="small mb-2">처리방침에 명시된 항목이 실제 앱에서 수집되지 않습니다.</div>
-      <div class="mt-2"><strong>조치 방법 (선택):</strong><br>{{ analysis.recommendations.review_action }}</div>
-    </div>
-    {% endif %}
-
-    {% if analysis.recommendations.best %}
-    <div class="alert alert-primary rounded-4 p-4">
-      <h6 class="fw-bold text-primary mb-3"><i class="fa-regular fa-circle-check me-2"></i>모범 사례</h6>
-      <ul class="small mb-0">
-        {% for tip in analysis.recommendations.best %}
-          <li>{{ tip }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %} -->
+    {% endwith %}
   </div>
 
   <div class="text-center mt-5">
@@ -186,25 +138,12 @@
 
 {% block extra_css %}
 <style>
-  /* 안전한 CSS 문법으로 수정 */
   body {
     background:
       radial-gradient(900px 500px at 12% 2%, #e9eeff 0%, transparent 60%),
       radial-gradient(900px 500px at 88% 2%, #e9ffee 0%, transparent 60%),
       #f8faff;
   }
-
-  .avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: grid;
-    place-items: center;
-    font-size: 16px;
-  }
-
-  .bg-purple-subtle { background: #f3e8ff !important; }
-  .text-purple { color: #7c3aed !important; }
 
   .bg-success-subtle { background: #eaf8ef !important; }
   .bg-danger-subtle  { background: #fdecec !important; }
