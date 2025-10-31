@@ -133,3 +133,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+POLICY_HF_MODEL_DIR = r"C:\Users\gram\primary-1\out_ps_ovr"
+POLICY_HF_BASE = "distilbert-base-uncased"                    # 코랩 학습 때 쓴 base 그대로
+
+# permission→label 매핑 소스들 (폴더/파일 혼용 가능)
+PERMISSION_LABEL_SOURCES = [
+    r"C:\Users\gram\primary-1\mapping"   # 여기에 permission_1.csv, permission_3.csv, permission_2.xlsx
+]
